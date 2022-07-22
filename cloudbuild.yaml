@@ -28,7 +28,7 @@ steps:
     args: ['push', 'gcr.io/$PROJECT_ID/${_APP_NAME}:${_ENVIRONMENT}']
 
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: "BUILD"
+    id: "DEPLOY"
     args:
       [
         'run',
