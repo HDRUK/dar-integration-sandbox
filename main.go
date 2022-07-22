@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Run - start the server
 func main() {
 	fx.New(
 		fx.Provide(mux.NewRouter),
