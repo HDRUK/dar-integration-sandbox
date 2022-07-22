@@ -10,7 +10,7 @@ func Test_isAuthorized_Authorized(t *testing.T) {
 	mockQuery := &MockQuery{}
 	mockService := &BaseService{query: mockQuery}
 
-	var token string = "authorizedd"
+	var token string = "authorized"
 	authorized := mockService.isAuthorized(&token)
 
 	assert.True(t, authorized)
