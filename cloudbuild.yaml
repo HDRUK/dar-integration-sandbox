@@ -10,7 +10,7 @@ steps:
     args: 
      - '-c'
      - |
-      'go test -v ./...'
+      go test -v ./...
     env:
       - 'GO111MODULE=on'
 
