@@ -41,6 +41,8 @@ steps:
         'gcr.io/$PROJECT_ID/${_APP_NAME}:${_ENVIRONMENT}',
         '--platform',
         'managed',
+        '--set-env-vars',
+        'MONGO_URI=${_MONGO_URI},MONGO_DB=${_MONGO_DB}',
         '--region',
         '${_REGION}',
         '--allow-unauthenticated',
