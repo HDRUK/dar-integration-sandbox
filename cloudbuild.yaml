@@ -6,7 +6,7 @@ steps:
 
   - name: "golang:1.17"
     id: "TEST"
-    entrypoint: '/bin/bash'
+    entrypoint: '/bin/bash -c'
     args: ['go', 'test', '-v', './api']
     env:
       - 'GO111MODULE=on'
