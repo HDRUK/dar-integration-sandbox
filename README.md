@@ -2,6 +2,32 @@
 
 Lightweight test server for testing the gateway-outbound service.
 
+#### Development
+
+Optimised for developing inside a Docker development environment.
+
+Add a .env file in the root of the project:
+
+```
+PORT=<chosen port to run on>
+MONGO_URI=<full MongoDB URI>
+MONGO_DB=<MongoDB database name>
+```
+
+Build the image:
+
+```
+docker build -t dar-integration-sandbox:dev -f Dockerfile.dev .
+```
+
+Run a development container:
+
+```
+docker run -d --name <chosen name> -p <chosen port>:<chosen port> -v /path/to/project/in/your/local:/go/src --network bridge dar-integration-sandbox:dev
+```
+
+CompileDaemon is installed inside the container, this reloads the build provided you have the correct volume mounted when you save.
+
 #### Endpoints
 
 Submit data access request data:
