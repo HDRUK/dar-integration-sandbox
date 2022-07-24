@@ -19,8 +19,8 @@ type Config struct {
 	MongoDB  string
 }
 
-// Get - load config variables
-func Get(logger *zap.SugaredLogger) *Config {
+// GetLocals - load config variables
+func GetLocals(logger *zap.SugaredLogger) *Config {
 	if err := godotenv.Load(); err != nil {
 		logger.Errorf(".env variables failed to load: %+v", err)
 	}
@@ -36,9 +36,7 @@ func Get(logger *zap.SugaredLogger) *Config {
 
 // ProvideDatabase - connect to database
 func ProvideDatabase(logger *zap.SugaredLogger, config *Config) *mongo.Database {
-	uri := os.Getenv("MONGO_URI")
-
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MongoURI))
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -49,7 +47,7 @@ func ProvideDatabase(logger *zap.SugaredLogger, config *Config) *mongo.Database 
 
 	logger.Info("Successfully connected to MongoDB...")
 
-	db := client.Database(os.Getenv("MONGO_DB"))
+	db := client.Database(config.MongoDB)
 
 	return db
 }

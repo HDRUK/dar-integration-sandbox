@@ -14,7 +14,7 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(mux.NewRouter),
-		fx.Provide(api.Get),
+		fx.Provide(api.GetLocals),
 		fx.Provide(api.ProvideDatabase),
 		fx.Invoke(api.NewServer),
 		fx.Invoke(registerHooks),
