@@ -28,6 +28,8 @@ docker run -d --name <chosen name> -p <chosen port>:<chosen port> -v /path/to/pr
 
 CompileDaemon is installed inside the container, this reloads the build provided you have the correct volume mounted when you save.
 
+The tests are configured to automatically run on every save in the dev Dockerfile. Any failing tests will be shown in the container logs. This does not prevent the app from building, but means you can test and develop in the same container.
+
 #### Endpoints
 
 Submit data access request data:
