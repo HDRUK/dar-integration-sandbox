@@ -10,8 +10,8 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN apk add --no-cache ca-certificates git
+RUN apk add --no-cache ca-certificates git build-base
 
 RUN go get github.com/githubnemo/CompileDaemon
 
-ENTRYPOINT CompileDaemon --build="go build -o /var/www/app /go/src/main.go" --command=/var/www/app
+ENTRYPOINT CompileDaemon --build="go test -v /go/src/... && go build -o /var/www/app /go/src/main.go" --command=/var/www/app
