@@ -36,7 +36,7 @@ func GetLocals(logger *zap.SugaredLogger) *Config {
 
 // ProvideDatabase - connect to database
 func ProvideDatabase(logger *zap.SugaredLogger, config *Config) *mongo.Database {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MongoURI))
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(config.MongoURI))
 	if err != nil {
 		logger.Panic(err)
 	}

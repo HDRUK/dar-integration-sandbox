@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -35,6 +36,10 @@ type MockQuery struct{}
 func (mq *MockQuery) find(ctx context.Context, collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M {
 	if filter["key"] == "authorized" {
 		return []bson.M{{"name": "testAccount"}}
+	}
+
+	if filter["key"] == "timeout" {
+		time.Sleep(6 * time.Second)
 	}
 
 	return []bson.M{}
