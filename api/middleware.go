@@ -23,12 +23,12 @@ func NewBaseMiddleware(s IService, logger *zap.SugaredLogger) *BaseMiddleware {
 }
 
 // AuthorizeBearerToken - check the validity of a bearer token
-func (b *BaseMiddleware) AuthorizeBearerToken(f http.HandlerFunc) http.HandlerFunc {
+func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authToken := strings.Split(r.Header.Get("Authorization"), " ")[1]
 
 		var isAuthorized bool = false
-		isAuthorized = b.service.isAuthorized(&authToken)
+		isAuthorized = b.service.isAuthorized(r.Context(), &authToken)
 
 		if !isAuthorized {
 			w.Header().Set("Content-Type", "application/json")
@@ -47,6 +47,6 @@ func (b *BaseMiddleware) AuthorizeBearerToken(f http.HandlerFunc) http.HandlerFu
 			return
 		}
 
-		f(w, r)
+		next(w, r)
 	}
 }

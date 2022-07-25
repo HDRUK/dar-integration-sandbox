@@ -10,7 +10,12 @@ import (
 
 // IQuery - BaseQuery implementations
 type IQuery interface {
-	find(collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M
+	find(
+		ctx context.Context,
+		collectionName string,
+		filter bson.M,
+		opts ...*options.FindOptions,
+	) []bson.M
 }
 
 // BaseQuery - hold db
@@ -24,10 +29,10 @@ func NewBaseQuery(db *mongo.Database) *BaseQuery {
 }
 
 // Find - find all documents matching filter
-func (b *BaseQuery) find(collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M {
+func (b *BaseQuery) find(ctx context.Context, collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M {
 	collection := b.db.Collection(collectionName)
 
-	cursor, _ := collection.Find(context.TODO(), filter)
+	cursor, _ := collection.Find(ctx, filter)
 
 	var decodedResult []bson.M
 	cursor.All(context.TODO(), &decodedResult)

@@ -1,13 +1,15 @@
 package api
 
 import (
+	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 )
 
 // IService - BaseService interface
 type IService interface {
-	isAuthorized(str *string) bool
+	isAuthorized(ctx context.Context, token *string) bool
 }
 
 // BaseService - hold scoped db
@@ -25,10 +27,10 @@ func NewBaseService(query IQuery, logger *zap.SugaredLogger) *BaseService {
 }
 
 // isAuthorized - validate bearer token
-func (s *BaseService) isAuthorized(token *string) bool {
+func (s *BaseService) isAuthorized(ctx context.Context, token *string) bool {
 	filter := bson.M{"key": *token}
 
-	results := s.query.find("tokens", filter)
+	results := s.query.find(ctx, "tokens", filter)
 
 	if len(results) > 0 {
 		return true

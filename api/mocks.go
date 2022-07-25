@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +21,7 @@ func MockLogger(t *testing.T) (*zap.SugaredLogger, *observer.ObservedLogs) {
 // MockService - mock implementation of BaseService
 type MockService struct{}
 
-func (ms *MockService) isAuthorized(token *string) bool {
+func (ms *MockService) isAuthorized(ctx context.Context, token *string) bool {
 	if *token == "authorized" {
 		return true
 	}
@@ -31,7 +32,7 @@ func (ms *MockService) isAuthorized(token *string) bool {
 // MockQuery - mock implementation of BaseQuery
 type MockQuery struct{}
 
-func (mq *MockQuery) find(collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M {
+func (mq *MockQuery) find(ctx context.Context, collectionName string, filter bson.M, opts ...*options.FindOptions) []bson.M {
 	if filter["key"] == "authorized" {
 		return []bson.M{{"name": "testAccount"}}
 	}
