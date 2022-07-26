@@ -41,7 +41,7 @@ HEADERS:
     Authorization: "Bearer " + your token
 
 BODY (application/json):
-    t.b.c
+    ANY
 
 RESPONSES:
     200: Successful submission
@@ -58,7 +58,10 @@ HEADERS:
     Authorization: "Bearer " + your token
 
 BODY (application/json):
-    t.b.c
+    `json:"topicId" validate:"required"`
+    `json:"messageId" validate:"required"`
+    `json:"createdDate" validate:"required"`
+    `json:"questionBank" validate:"required"`
 
 RESPONSES:
     200: Successful submission
