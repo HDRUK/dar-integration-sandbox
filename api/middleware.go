@@ -27,8 +27,6 @@ func NewBaseMiddleware(s IService, logger *zap.SugaredLogger) *BaseMiddleware {
 // AuthorizeBearerToken - check the validity of a bearer token
 func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authToken := strings.Split(r.Header.Get("Authorization"), " ")[1]
-
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -36,7 +34,10 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 		go func(ctx context.Context) {
 			defer func() {
 				recover()
+				cancel()
 			}()
+			authToken := strings.Split(r.Header.Get("Authorization"), " ")[1]
+
 			isAuthorized = b.service.isAuthorized(ctx, &authToken)
 
 			cancel()
