@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/go-playground/validator"
 	"go.uber.org/zap"
@@ -61,10 +63,10 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 // expectedData - struct of expect first message schema
 type firstMessageSchema struct {
-	TopicID      string      `json:"topicId" validate:"required"`
-	MessageID    int64       `json:"messageId" validate:"required"`
-	CreatedDate  string      `json:"createdDate"`
-	QuestionBank interface{} `json:"questionBank"`
+	TopicID      string                 `json:"topicId" validate:"required"`
+	MessageID    int64                  `json:"messageId" validate:"required"`
+	CreatedDate  string                 `json:"createdDate"`
+	QuestionBank map[string]interface{} `json:"questionBank"`
 }
 
 // firstMessageHandler - handler for a first message enquiry
@@ -95,6 +97,38 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		)
 		return
 	}
+
+	accessToken := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+
+	messageToSend, _ := json.Marshal(map[string]interface{}{
+		"messageType":        "message",
+		"topic":              message.TopicID,
+		"relatedObjectIds":   []string{message.QuestionBank["datasetsRequested"].([]interface{})[0].(map[string]interface{})["_id"].(string)},
+		"messageDescription": "Hello from the sandbox server!",
+	})
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest(http.MethodPost, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/messages", bytes.NewBuffer(messageToSend))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", accessToken)
+
+	res, err := client.Do(req)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		json.NewEncoder(w).Encode(
+			&DefaultResponse{
+				Success: false,
+				Status:  "INTERNAL SERVER ERROR",
+				Message: "Error sending reply to Gateway API",
+			},
+		)
+		return
+
+	}
+	defer res.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
