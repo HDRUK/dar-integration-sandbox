@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"go.uber.org/zap"
 )
@@ -22,7 +23,7 @@ func GetAccessToken(clientID string, clientSecret string, logger *zap.SugaredLog
 		ClientSecret: clientSecret,
 	})
 
-	res, err := http.Post("https://api.dev.hdruk.dev/oauth/token", "application/json", bytes.NewBuffer(credentials))
+	res, err := http.Post(os.Getenv("GATEWAY_BASE_URL")+"/oauth/token", "application/json", bytes.NewBuffer(credentials))
 	if err != nil {
 		logger.Panic(err.Error())
 	}
