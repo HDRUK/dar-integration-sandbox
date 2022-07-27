@@ -16,7 +16,7 @@ type credentials struct {
 }
 
 // GetAccessToken - retrieva a Gateway access token using the client credentials grant flow
-func GetAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) string {
+func GetAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) (string, error) {
 	credentials, _ := json.Marshal(&credentials{
 		GrantType:    "client_credentials",
 		ClientID:     clientID,
@@ -25,17 +25,19 @@ func GetAccessToken(clientID string, clientSecret string, logger *zap.SugaredLog
 
 	res, err := http.Post(os.Getenv("GATEWAY_BASE_URL")+"/oauth/token", "application/json", bytes.NewBuffer(credentials))
 	if err != nil {
-		logger.Panic(err.Error())
+		logger.Error(err.Error())
+		return "", err
 	}
 	defer res.Body.Close()
 
 	var tokenBody map[string]interface{}
 	err = json.NewDecoder(res.Body).Decode(&tokenBody)
 	if err != nil {
-		logger.Panic(err.Error())
+		logger.Error(err.Error())
+		return "", err
 	}
 
 	accessToken := tokenBody["access_token"].(string)
 
-	return accessToken
+	return accessToken, nil
 }

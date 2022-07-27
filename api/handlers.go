@@ -2,9 +2,11 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/go-playground/validator"
 	"go.uber.org/zap"
@@ -98,46 +100,78 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	accessToken := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
 
-	messageToSend, _ := json.Marshal(map[string]interface{}{
-		"messageType":        "message",
-		"topic":              message.TopicID,
-		"relatedObjectIds":   []string{message.QuestionBank["datasetsRequested"].([]interface{})[0].(map[string]interface{})["_id"].(string)},
-		"messageDescription": "Hello from the sandbox server!",
-	})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(ctx context.Context) {
+		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		if err != nil {
+			cancel()
+			wg.Done()
+			return
+		}
 
-	client := &http.Client{}
+		messageToSend, _ := json.Marshal(map[string]interface{}{
+			"messageType":        "message",
+			"topic":              message.TopicID,
+			"relatedObjectIds":   []string{message.QuestionBank["datasetsRequested"].([]interface{})[0].(map[string]interface{})["_id"].(string)},
+			"messageDescription": "Hello from the sandbox server!",
+		})
 
-	req, err := http.NewRequest(http.MethodPost, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/messages", bytes.NewBuffer(messageToSend))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", accessToken)
+		client := &http.Client{}
 
-	res, err := client.Do(req)
-	if err != nil {
+		req, err := http.NewRequest(http.MethodPost, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/messages", bytes.NewBuffer(messageToSend))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", accessToken)
+
+		res, err := client.Do(req)
+		if err != nil {
+			cancel()
+			wg.Done()
+			return
+		}
+
+		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
+			h.Logger.Error("Reply message request to Gateway received status code %d", res.StatusCode)
+			cancel()
+			wg.Done()
+			return
+		}
+
+		defer res.Body.Close()
+		wg.Done()
+	}(ctx)
+	wg.Wait()
+
+	select {
+	case <-ctx.Done():
+		switch ctx.Err() {
+		case context.Canceled:
+			h.Logger.Error("Error sending reply to Gateway API")
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			json.NewEncoder(w).Encode(
+				&DefaultResponse{
+					Success: false,
+					Status:  "INTERNAL SERVER ERROR",
+					Message: "Error sending reply to Gateway API",
+				},
+			)
+
+		}
+	default:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
 		json.NewEncoder(w).Encode(
 			&DefaultResponse{
-				Success: false,
-				Status:  "INTERNAL SERVER ERROR",
-				Message: "Error sending reply to Gateway API",
+				Success: true,
+				Status:  "OK",
+				Message: "Data Access Request Submitted",
 			},
 		)
-		return
-
 	}
-	defer res.Body.Close()
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(
-		&DefaultResponse{
-			Success: true,
-			Status:  "OK",
-			Message: "Data Access Request Submitted",
-		},
-	)
 }
