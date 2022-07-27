@@ -42,7 +42,7 @@ steps:
         '--platform',
         'managed',
         '--set-env-vars',
-        'MONGO_URI=${_MONGO_URI},MONGO_DB=${_MONGO_DB}',
+        'MONGO_URI=${_MONGO_URI},MONGO_DB=${_MONGO_DB},GATEWAY_BASE_URL=${_GATEWAY_BASE_URL},GATEWAY_CLIENT_ID=${_GATEWAY_CLIENT_ID},GATEWAY_CLIENT_SECRET=${_GATEWAY_CLIENT_SECRET}',
         '--region',
         '${_REGION}',
         '--allow-unauthenticated',
