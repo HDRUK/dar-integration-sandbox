@@ -12,31 +12,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// Config - environment variables
-type Config struct {
-	Port     string
-	MongoURI string
-	MongoDB  string
-}
-
-// GetLocals - load config variables
-func GetLocals(logger *zap.SugaredLogger) *Config {
+// LoadVariables - load config variables
+func LoadVariables(logger *zap.SugaredLogger) {
 	if err := godotenv.Load(); err != nil {
-		logger.Errorf(".env variables failed to load: %+v", err)
+		logger.Errorf(".env variables failed to load (only applicable in a development environment): %+v", err)
 	}
-
-	config := &Config{
-		Port:     os.Getenv("PORT"),
-		MongoURI: os.Getenv("MONGO_URI"),
-		MongoDB:  os.Getenv("MONGO_DB"),
-	}
-
-	return config
 }
 
 // ProvideDatabase - connect to database
-func ProvideDatabase(logger *zap.SugaredLogger, config *Config) *mongo.Database {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(config.MongoURI))
+func ProvideDatabase(logger *zap.SugaredLogger) *mongo.Database {
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -47,7 +32,7 @@ func ProvideDatabase(logger *zap.SugaredLogger, config *Config) *mongo.Database 
 
 	logger.Info("Successfully connected to MongoDB...")
 
-	db := client.Database(config.MongoDB)
+	db := client.Database(os.Getenv("MONGO_DB"))
 
 	return db
 }

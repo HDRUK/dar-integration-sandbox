@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/HDRUK/dar-integration-sandbox/api"
 	"github.com/gorilla/mux"
@@ -14,18 +15,18 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(mux.NewRouter),
-		fx.Provide(api.GetLocals),
 		fx.Provide(api.ProvideDatabase),
+		fx.Invoke(api.LoadVariables),
 		fx.Invoke(api.NewServer),
 		fx.Invoke(registerHooks),
 		api.LoggerFXModule,
 	).Run()
 }
 
-func registerHooks(lifecycle fx.Lifecycle, mux *mux.Router, logger *zap.SugaredLogger, config *api.Config) {
+func registerHooks(lifecycle fx.Lifecycle, mux *mux.Router, logger *zap.SugaredLogger) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			go http.ListenAndServe(":"+config.Port, mux)
+			go http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 
 			return nil
 		},
