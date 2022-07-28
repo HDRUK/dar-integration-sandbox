@@ -53,13 +53,69 @@ func (h *BaseHandler) healthCheckHandler(w http.ResponseWriter, r *http.Request)
 // applicationHandler - handler for a DAR submission
 func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	var application map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&application)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	applicationID := application["details"].(map[string]interface{})["dataRequestId"].(string)
+
+	eg := new(errgroup.Group)
+
+	eg.Go(func() error {
+		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		if err != nil {
+			return err
+		}
+
+		messageToSend, _ := json.Marshal(map[string]string{
+			"applicationStatus":            "approved",
+			"applicationStatusDescription": "Approved automatically by the sandbox server!",
+		})
+
+		client := &http.Client{}
+
+		req, err := http.NewRequest(http.MethodPut, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/data-access-request/"+applicationID, bytes.NewBuffer(messageToSend))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", accessToken)
+
+		res, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
+			return errors.New("DAR approval request tp Gateway received status code " + strconv.Itoa(res.StatusCode))
+		}
+		defer res.Body.Close()
+
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		h.Logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		json.NewEncoder(w).Encode(
+			&DefaultResponse{
+				Success: false,
+				Status:  "INTERNAL SERVER ERROR",
+				Message: "Error updating application status on Gateway",
+			},
+		)
+
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(
 		&DefaultResponse{
 			Success: true,
 			Status:  "OK",
-			Message: "Enquiry Message Submitted",
+			Message: "Data Access Request Submitted",
 		},
 	)
 }
