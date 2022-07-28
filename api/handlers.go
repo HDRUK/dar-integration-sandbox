@@ -2,14 +2,15 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
-	"sync"
+	"strconv"
 
 	"github.com/go-playground/validator"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 // DefaultResponse - default response struct
@@ -73,6 +74,8 @@ type firstMessageSchema struct {
 
 // firstMessageHandler - handler for a first message enquiry
 func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var message firstMessageSchema
 	err := json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
@@ -82,8 +85,6 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 
 	validate := validator.New()
 	if err := validate.Struct(message); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-
 		validationErrors := err.(validator.ValidationErrors)
 		for _, validationError := range validationErrors {
 			h.Logger.Warn(validationError)
@@ -100,17 +101,12 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
+	eg := new(errgroup.Group)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
+	eg.Go(func() error {
 		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
 		if err != nil {
-			cancel()
-			wg.Done()
-			return
+			return err
 		}
 
 		messageToSend, _ := json.Marshal(map[string]interface{}{
@@ -128,50 +124,39 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 
 		res, err := client.Do(req)
 		if err != nil {
-			cancel()
-			wg.Done()
-			return
+			return err
 		}
 
 		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
-			h.Logger.Error("Reply message request to Gateway received status code %d", res.StatusCode)
-			cancel()
-			wg.Done()
-			return
+			return errors.New("Reply message request to Gateway received status code " + strconv.Itoa(res.StatusCode))
 		}
-
 		defer res.Body.Close()
-		wg.Done()
-	}(ctx)
-	wg.Wait()
 
-	select {
-	case <-ctx.Done():
-		switch ctx.Err() {
-		case context.Canceled:
-			h.Logger.Error("Error sending reply to Gateway API")
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
+		return nil
+	})
 
-			json.NewEncoder(w).Encode(
-				&DefaultResponse{
-					Success: false,
-					Status:  "INTERNAL SERVER ERROR",
-					Message: "Error sending reply to Gateway API",
-				},
-			)
-
-		}
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+	if err := eg.Wait(); err != nil {
+		h.Logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 
 		json.NewEncoder(w).Encode(
 			&DefaultResponse{
-				Success: true,
-				Status:  "OK",
-				Message: "Data Access Request Submitted",
+				Success: false,
+				Status:  "INTERNAL SERVER ERROR",
+				Message: "Error sending reply to Gateway API",
 			},
 		)
+
+		return
 	}
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(
+		&DefaultResponse{
+			Success: true,
+			Status:  "OK",
+			Message: "Data Access Request Submitted",
+		},
+	)
+
 }
