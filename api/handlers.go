@@ -88,7 +88,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		}
 
 		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
-			return errors.New("DAR approval request tp Gateway received status code " + strconv.Itoa(res.StatusCode))
+			return errors.New("DAR approval request to Gateway received status code " + strconv.Itoa(res.StatusCode))
 		}
 		defer res.Body.Close()
 
