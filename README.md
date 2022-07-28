@@ -1,5 +1,7 @@
 ### DAR Integration Sandbox
 
+This project is still in development and serves as an example only.
+
 Lightweight test server for testing the gateway-outbound service.
 
 #### Development
