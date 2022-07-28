@@ -34,7 +34,9 @@ The tests are configured to automatically run on every save in the dev Dockerfil
 
 #### Endpoints
 
-Submit data access request data:
+##### Submit data access request data
+
+Makes a PUT request to gateway-api to approve the submitted data access request.
 
 ```
 POST [ROOT]/application
@@ -48,10 +50,13 @@ BODY (application/json):
 RESPONSES:
     200: Successful submission
     400: Bad request (e.g. invalid JSON body)
-    401: Unauthorized
+    401: Unauthorized (bad token or token not supplied)
+    500: Internal server error (broad scope, check logs)
 ```
 
-Submit pre-application enquiry message data:
+##### Submit pre-application enquiry message data
+
+Makes a POST request to gateway-api in response to the request to submit a test reply to the message.
 
 ```
 POST [ROOT]/application
@@ -68,7 +73,8 @@ BODY (application/json):
 RESPONSES:
     200: Successful submission
     400: Bad request (e.g. invalid JSON body)
-    401: Unauthorized
+    401: Unauthorized (bad token or token not supplied)
+    500: Internal server error (broad scope, check logs)
 
 ```
 
