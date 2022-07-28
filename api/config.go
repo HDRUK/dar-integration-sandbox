@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,12 +22,15 @@ func LoadVariables(logger *zap.SugaredLogger) {
 
 // ProvideDatabase - connect to database
 func ProvideDatabase(logger *zap.SugaredLogger) *mongo.Database {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
 		logger.Panic(err)
 	}
 
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		logger.Panic(err)
 	}
 
