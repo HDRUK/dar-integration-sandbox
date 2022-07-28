@@ -30,8 +30,10 @@ func NewBaseService(query IQuery, logger *zap.SugaredLogger) *BaseService {
 func (s *BaseService) isAuthorized(ctx context.Context, token *string) bool {
 	filter := bson.M{"key": *token}
 
+	// MongoDB find is wrapped in a separate service so that we can easily mock it in tests
 	results := s.query.find(ctx, "tokens", filter)
 
+	// In summary, if any accounts have this access token, then isAuthorized returns true
 	if len(results) > 0 {
 		return true
 	}

@@ -50,10 +50,11 @@ func (h *BaseHandler) healthCheckHandler(w http.ResponseWriter, r *http.Request)
 	)
 }
 
-// applicationHandler - handler for a DAR submission
+// applicationHandler - handler for a DAR application submission
 func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	// Decode the incoming request body
 	var application map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&application)
 	if err != nil {
@@ -61,23 +62,28 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Capture the DAR application ID so that we can approve the DAR application
 	applicationID := application["details"].(map[string]interface{})["dataRequestId"].(string)
 
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
+		// Get an access token from gateway-api using the service account credentials
 		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
 		if err != nil {
 			return err
 		}
 
+		// Structure the JSON body that we need to send to approve a data access request
 		messageToSend, _ := json.Marshal(map[string]string{
 			"applicationStatus":            "approved",
 			"applicationStatusDescription": "Approved automatically by the sandbox server!",
 		})
 
+		// Instantiate a new HTTP client
 		client := &http.Client{}
 
+		// Structure a PUT request to the gateway-api to approve an application
 		req, err := http.NewRequest(http.MethodPut, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/data-access-request/"+applicationID, bytes.NewBuffer(messageToSend))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", accessToken)
@@ -87,6 +93,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 			return err
 		}
 
+		// Catch responses which are NOT 200 or 201
 		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
 			return errors.New("DAR approval request to Gateway received status code " + strconv.Itoa(res.StatusCode))
 		}
@@ -95,6 +102,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		return nil
 	})
 
+	// Using errgroup as akin to a try/catch, requires revision but allows us to send 500 in first instance
 	if err := eg.Wait(); err != nil {
 		h.Logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -109,6 +117,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+	// If errors == <nil> send OK response
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(

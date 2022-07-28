@@ -27,10 +27,13 @@ func NewBaseMiddleware(s IService, logger *zap.SugaredLogger) *BaseMiddleware {
 // AuthorizeBearerToken - check the validity of a bearer token
 func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Create a context with a timeout so that the request doesn't hang is there is a MongoDB issue
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		var isAuthorized bool = false
+
+		// Initiate a go routine to determine if the auth token is valid
 		go func(ctx context.Context) {
 			defer func() {
 				recover()
@@ -43,6 +46,8 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 			cancel()
 		}(ctx)
 
+		// Determine the outcome of go routine, canceled our deadlineExceeded denotes error case
+		// If all okay, pass request to handler
 		select {
 		case <-ctx.Done():
 			switch ctx.Err() {
