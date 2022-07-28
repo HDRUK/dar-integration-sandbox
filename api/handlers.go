@@ -157,6 +157,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// The below is a repeat of the application handler logic, needs breaking out into re-usable components
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
