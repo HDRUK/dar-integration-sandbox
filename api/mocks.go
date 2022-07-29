@@ -34,6 +34,10 @@ func (mh *MockHelper) getAccessToken(clientID string, clientSecret string, logge
 	return "", nil
 }
 
+func (mh *MockHelper) httpRequest(method string, url string, body []byte) error {
+	return nil
+}
+
 // MockQuery - mock implementation of BaseQuery
 type MockQuery struct{}
 

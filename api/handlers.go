@@ -1,12 +1,9 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/go-playground/validator"
 	"go.uber.org/zap"
@@ -62,47 +59,30 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	h.logger.Info("DAR application received: ", application)
+
 	// Capture the DAR application ID so that we can approve the DAR application
 	applicationID := application["details"].(map[string]interface{})["dataRequestId"].(string)
 
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
-		// Get an access token from gateway-api using the service account credentials
-		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
-		if err != nil {
-			return err
-		}
-
 		// Structure the JSON body that we need to send to approve a data access request
 		messageToSend, _ := json.Marshal(map[string]string{
 			"applicationStatus":            "approved",
 			"applicationStatusDescription": "Approved automatically by the sandbox server!",
 		})
 
-		// Instantiate a new HTTP client
-		client := &http.Client{}
-
-		// Structure a PUT request to the gateway-api to approve an application
-		req, err := http.NewRequest(http.MethodPut, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/data-access-request/"+applicationID, bytes.NewBuffer(messageToSend))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", accessToken)
-
-		res, err := client.Do(req)
+		// Make a PUT request to the Gateway to automatically approve the data access request
+		err := h.helper.httpRequest(http.MethodPut, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/data-access-request/"+applicationID, messageToSend)
 		if err != nil {
 			return err
 		}
 
-		// Catch responses which are NOT 200 or 201
-		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
-			return errors.New("DAR approval request to Gateway received status code " + strconv.Itoa(res.StatusCode))
-		}
-		defer res.Body.Close()
-
 		return nil
 	})
 
-	// Using errgroup as akin to a try/catch, requires revision but allows us to send 500 in first instance
+	// Catch any errors in the above goroutine
 	if err := eg.Wait(); err != nil {
 		h.logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -124,7 +104,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		&DefaultResponse{
 			Success: true,
 			Status:  "OK",
-			Message: "Data Access Request Submitted",
+			Message: "Data Access Request submitted",
 		},
 	)
 }
@@ -148,6 +128,8 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	h.logger.Info("First message enquiry received: ", message)
+
 	validate := validator.New()
 	if err := validate.Struct(message); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
@@ -170,11 +152,6 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
-		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
-		if err != nil {
-			return err
-		}
-
 		messageToSend, _ := json.Marshal(map[string]interface{}{
 			"messageType":        "message",
 			"topic":              message.TopicID,
@@ -182,21 +159,10 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 			"messageDescription": "Hello from the sandbox server!",
 		})
 
-		client := &http.Client{}
-
-		req, err := http.NewRequest(http.MethodPost, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/messages", bytes.NewBuffer(messageToSend))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", accessToken)
-
-		res, err := client.Do(req)
+		err := h.helper.httpRequest(http.MethodPost, os.Getenv("GATEWAY_BASE_URL")+"/api/v1/messages", messageToSend)
 		if err != nil {
 			return err
 		}
-
-		if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
-			return errors.New("Reply message request to Gateway received status code " + strconv.Itoa(res.StatusCode))
-		}
-		defer res.Body.Close()
 
 		return nil
 	})
@@ -209,7 +175,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 			&DefaultResponse{
 				Success: false,
 				Status:  "INTERNAL SERVER ERROR",
-				Message: "Error sending reply to Gateway API",
+				Message: "Error sending message reply to Gateway API",
 			},
 		)
 
@@ -221,7 +187,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		&DefaultResponse{
 			Success: true,
 			Status:  "OK",
-			Message: "Data Access Request Submitted",
+			Message: "First message enquiry submitted",
 		},
 	)
 

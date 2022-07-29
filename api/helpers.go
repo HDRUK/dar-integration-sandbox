@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
@@ -15,6 +17,7 @@ import (
 type IHelper interface {
 	isAuthorized(ctx context.Context, token *string) bool
 	getAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) (string, error)
+	httpRequest(method string, url string, body []byte) error
 }
 
 // BaseHelper - hold scoped logger, query
@@ -77,4 +80,30 @@ func (h *BaseHelper) getAccessToken(clientID string, clientSecret string, logger
 	accessToken := tokenBody["access_token"].(string)
 
 	return accessToken, nil
+}
+
+// httpRequest -  simple wrapper for making a HTTP request to a target server, given a httpMethod
+func (h *BaseHelper) httpRequest(method string, url string, body []byte) error {
+	accessToken, err := h.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", accessToken)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated) {
+		return errors.New(method + " request to gateway-api received status code " + strconv.Itoa(res.StatusCode))
+	}
+	defer res.Body.Close()
+
+	return nil
 }
