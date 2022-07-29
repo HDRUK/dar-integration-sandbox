@@ -9,7 +9,7 @@ import (
 
 func Test_isAuthorized_Authorized(t *testing.T) {
 	mockQuery := &MockQuery{}
-	mockService := &BaseService{query: mockQuery}
+	mockService := &BaseHelper{query: mockQuery}
 
 	var token string = "authorized"
 	authorized := mockService.isAuthorized(context.TODO(), &token)
@@ -19,7 +19,7 @@ func Test_isAuthorized_Authorized(t *testing.T) {
 
 func Test_isAuthorized_Unauthorized(t *testing.T) {
 	mockQuery := &MockQuery{}
-	mockService := &BaseService{query: mockQuery}
+	mockService := &BaseHelper{query: mockQuery}
 
 	var token string = "blah"
 	authorized := mockService.isAuthorized(context.TODO(), &token)

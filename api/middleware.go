@@ -12,15 +12,15 @@ import (
 
 // BaseMiddleware - hold db, logger
 type BaseMiddleware struct {
-	Logger  *zap.SugaredLogger
-	service IService
+	Logger *zap.SugaredLogger
+	helper IHelper
 }
 
 // NewBaseMiddleware - instantiate a new BaseMiddleware
-func NewBaseMiddleware(s IService, logger *zap.SugaredLogger) *BaseMiddleware {
+func NewBaseMiddleware(helper IHelper, logger *zap.SugaredLogger) *BaseMiddleware {
 	return &BaseMiddleware{
-		Logger:  logger,
-		service: s,
+		Logger: logger,
+		helper: helper,
 	}
 }
 
@@ -41,7 +41,7 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 			}()
 			authToken := strings.Split(r.Header.Get("Authorization"), " ")[1]
 
-			isAuthorized = b.service.isAuthorized(ctx, &authToken)
+			isAuthorized = b.helper.isAuthorized(ctx, &authToken)
 
 			cancel()
 		}(ctx)

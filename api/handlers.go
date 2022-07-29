@@ -22,15 +22,15 @@ type DefaultResponse struct {
 
 // BaseHandler - hold scoped db, logger
 type BaseHandler struct {
-	Logger  *zap.SugaredLogger
-	service IService
+	Logger *zap.SugaredLogger
+	helper IHelper
 }
 
 // NewBaseHandler - instantiate a new BaseHandler
-func NewBaseHandler(s IService, logger *zap.SugaredLogger) *BaseHandler {
+func NewBaseHandler(helper IHelper, logger *zap.SugaredLogger) *BaseHandler {
 	return &BaseHandler{
-		Logger:  logger,
-		service: s,
+		Logger: logger,
+		helper: helper,
 	}
 }
 
@@ -69,7 +69,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 	eg.Go(func() error {
 		// Get an access token from gateway-api using the service account credentials
-		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
-		accessToken, err := GetAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
 		if err != nil {
 			return err
 		}

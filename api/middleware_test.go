@@ -23,9 +23,9 @@ func Test_AuthorizeBearerToken_Unauthorized(t *testing.T) {
 
 	log, logs := MockLogger(t)
 
-	var mockService = &MockService{}
+	var mockHelper = &MockHelper{}
 
-	mockBaseMiddleware := &BaseMiddleware{Logger: log, service: mockService}
+	mockBaseMiddleware := &BaseMiddleware{Logger: log, helper: mockHelper}
 
 	mockBaseMiddleware.AuthorizeBearerToken(mockHandler)(res, req)
 
@@ -54,9 +54,9 @@ func Test_AuthorizeBearerToken_Authorized(t *testing.T) {
 	var token string = "Bearer authorized"
 	req.Header.Set("Authorization", token)
 
-	var mockService = &MockService{}
+	var mockHelper = &MockHelper{}
 
-	mockBaseMiddleware := &BaseMiddleware{service: mockService}
+	mockBaseMiddleware := &BaseMiddleware{helper: mockHelper}
 
 	mockBaseMiddleware.AuthorizeBearerToken(mockHandler)(res, req)
 

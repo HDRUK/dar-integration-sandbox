@@ -19,15 +19,19 @@ func MockLogger(t *testing.T) (*zap.SugaredLogger, *observer.ObservedLogs) {
 	return slogger, logs
 }
 
-// MockService - mock implementation of BaseService
-type MockService struct{}
+// MockHelper - mock implementation of BaseHelper
+type MockHelper struct{}
 
-func (ms *MockService) isAuthorized(ctx context.Context, token *string) bool {
+func (mh *MockHelper) isAuthorized(ctx context.Context, token *string) bool {
 	if *token == "authorized" {
 		return true
 	}
 
 	return false
+}
+
+func (mh *MockHelper) getAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) (string, error) {
+	return "", nil
 }
 
 // MockQuery - mock implementation of BaseQuery

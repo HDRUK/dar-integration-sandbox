@@ -22,9 +22,9 @@ func NewServer(s *mux.Router, db *mongo.Database, logger *zap.SugaredLogger) *Ro
 // handleRoutes - bind routes to the handler
 func (r *Router) handleRoutes(db *mongo.Database, logger *zap.SugaredLogger) {
 	baseQuery := NewBaseQuery(db)
-	baseService := NewBaseService(baseQuery, logger)
-	baseHandler := NewBaseHandler(baseService, logger)
-	baseMiddleware := NewBaseMiddleware(baseService, logger)
+	baseUtility := NewBaseHelper(baseQuery, logger)
+	baseHandler := NewBaseHandler(baseUtility, logger)
+	baseMiddleware := NewBaseMiddleware(baseUtility, logger)
 
 	// Health check
 	r.mux.HandleFunc("/status", baseHandler.healthCheckHandler).Methods("GET", "OPTIONS")
