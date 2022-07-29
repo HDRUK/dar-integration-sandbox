@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
@@ -84,6 +85,9 @@ func (h *BaseHelper) getAccessToken(clientID string, clientSecret string, logger
 
 // httpRequest -  simple wrapper for making a HTTP request to a target server, given a httpMethod
 func (h *BaseHelper) httpRequest(method string, url string, body []byte) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	accessToken, err := h.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
 	if err != nil {
 		return err
@@ -105,5 +109,10 @@ func (h *BaseHelper) httpRequest(method string, url string, body []byte) error {
 	}
 	defer res.Body.Close()
 
-	return nil
+	select {
+	case <-ctx.Done():
+		return errors.New("Timed out waiting for response from " + url)
+	default:
+		return nil
+	}
 }
