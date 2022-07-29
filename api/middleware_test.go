@@ -25,7 +25,7 @@ func Test_AuthorizeBearerToken_Unauthorized(t *testing.T) {
 
 	var mockHelper = &MockHelper{}
 
-	mockBaseMiddleware := &BaseMiddleware{Logger: log, helper: mockHelper}
+	mockBaseMiddleware := &BaseMiddleware{logger: log, helper: mockHelper}
 
 	mockBaseMiddleware.AuthorizeBearerToken(mockHandler)(res, req)
 

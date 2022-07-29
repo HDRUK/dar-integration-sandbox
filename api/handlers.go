@@ -22,21 +22,21 @@ type DefaultResponse struct {
 
 // BaseHandler - hold scoped db, logger
 type BaseHandler struct {
-	Logger *zap.SugaredLogger
+	logger *zap.SugaredLogger
 	helper IHelper
 }
 
 // NewBaseHandler - instantiate a new BaseHandler
 func NewBaseHandler(helper IHelper, logger *zap.SugaredLogger) *BaseHandler {
 	return &BaseHandler{
-		Logger: logger,
+		logger: logger,
 		helper: helper,
 	}
 }
 
 // healthCheckHandler - test the API is up and running
 func (h *BaseHandler) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	h.Logger.Info("Server status check")
+	h.logger.Info("Server status check")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -69,7 +69,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 	eg.Go(func() error {
 		// Get an access token from gateway-api using the service account credentials
-		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 	// Using errgroup as akin to a try/catch, requires revision but allows us to send 500 in first instance
 	if err := eg.Wait(); err != nil {
-		h.Logger.Error(err)
+		h.logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		json.NewEncoder(w).Encode(
@@ -152,7 +152,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 	if err := validate.Struct(message); err != nil {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, validationError := range validationErrors {
-			h.Logger.Warn(validationError)
+			h.logger.Warn(validationError)
 		}
 
 		w.WriteHeader(http.StatusBadRequest)
@@ -170,7 +170,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
-		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.Logger)
+		accessToken, err := h.helper.getAccessToken(os.Getenv("GATEWAY_CLIENT_ID"), os.Getenv("GATEWAY_CLIENT_SECRET"), h.logger)
 		if err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 	})
 
 	if err := eg.Wait(); err != nil {
-		h.Logger.Error(err)
+		h.logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		json.NewEncoder(w).Encode(

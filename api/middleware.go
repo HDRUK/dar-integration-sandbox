@@ -12,14 +12,14 @@ import (
 
 // BaseMiddleware - hold db, logger
 type BaseMiddleware struct {
-	Logger *zap.SugaredLogger
+	logger *zap.SugaredLogger
 	helper IHelper
 }
 
 // NewBaseMiddleware - instantiate a new BaseMiddleware
 func NewBaseMiddleware(helper IHelper, logger *zap.SugaredLogger) *BaseMiddleware {
 	return &BaseMiddleware{
-		Logger: logger,
+		logger: logger,
 		helper: helper,
 	}
 }
@@ -55,7 +55,7 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 
-				b.Logger.Warn("Timeout waiting for MongoDB response")
+				b.logger.Warn("Timeout waiting for MongoDB response")
 
 				json.NewEncoder(w).Encode(
 					&DefaultResponse{
@@ -69,7 +69,7 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusUnauthorized)
 
-					b.Logger.Warn("Unauthorized access attempt")
+					b.logger.Warn("Unauthorized access attempt")
 
 					json.NewEncoder(w).Encode(
 						&DefaultResponse{

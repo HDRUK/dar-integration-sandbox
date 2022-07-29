@@ -15,7 +15,7 @@ func Test_HealthCheckHandler(t *testing.T) {
 
 	log, logs := MockLogger(t)
 
-	mockBaseHandler := &BaseHandler{Logger: log}
+	mockBaseHandler := &BaseHandler{logger: log}
 
 	mockBaseHandler.healthCheckHandler(res, req)
 

@@ -32,11 +32,11 @@ func NewBaseHelper(query IQuery, logger *zap.SugaredLogger) *BaseHelper {
 }
 
 // isAuthorized - validate bearer token
-func (u *BaseHelper) isAuthorized(ctx context.Context, token *string) bool {
+func (h *BaseHelper) isAuthorized(ctx context.Context, token *string) bool {
 	filter := bson.M{"key": *token}
 
 	// MongoDB find is wrapped in a separate service so that we can easily mock it in tests
-	results := u.query.find(ctx, "tokens", filter)
+	results := h.query.find(ctx, "tokens", filter)
 
 	// In summary, if any accounts have this access token, then isAuthorized returns true
 	if len(results) > 0 {
@@ -53,7 +53,7 @@ type credentials struct {
 }
 
 // getAccessToken - retrieva a Gateway access token using the client credentials grant flow
-func (u *BaseHelper) getAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) (string, error) {
+func (h *BaseHelper) getAccessToken(clientID string, clientSecret string, logger *zap.SugaredLogger) (string, error) {
 	credentials, _ := json.Marshal(&credentials{
 		GrantType:    "client_credentials",
 		ClientID:     clientID,
