@@ -12,8 +12,13 @@ Add a .env file in the root of the project:
 
 ```
 PORT=<chosen port to run on>
+
 MONGO_URI=<full MongoDB URI>
 MONGO_DB=<MongoDB database name>
+
+GATEWAY_BASE_URL=<gateway-api URL>
+GATEWAY_CLIENT_ID=<valid gateway-api service account client ID>
+GATEWAY_CLIENT_SECRET=<valid gateway-api service account client secret>
 ```
 
 Build the image:
