@@ -59,7 +59,7 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.logger.Info("DAR application received: ", application)
+	h.logger.Info("DAR application received: ", r.Body)
 
 	eg := new(errgroup.Group)
 
