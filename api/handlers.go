@@ -61,12 +61,12 @@ func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request)
 
 	h.logger.Info("DAR application received: ", application)
 
-	// Capture the DAR application ID so that we can approve the DAR application
-	applicationID := application["details"].(map[string]interface{})["dataRequestId"].(string)
-
 	eg := new(errgroup.Group)
 
 	eg.Go(func() error {
+		// Capture the DAR application ID so that we can approve the DAR application
+		applicationID := application["dataRequestId"].(string)
+
 		// Structure the JSON body that we need to send to approve a data access request
 		messageToSend, _ := json.Marshal(map[string]string{
 			"applicationStatus":            "approved",
