@@ -128,7 +128,7 @@ func (h *BaseHandler) firstMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	h.logger.Info("First message enquiry received: ", message)
+	h.logger.Info("First message enquiry received: ", r.Body)
 
 	validate := validator.New()
 	if err := validate.Struct(message); err != nil {
