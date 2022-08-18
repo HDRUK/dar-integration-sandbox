@@ -83,4 +83,23 @@ RESPONSES:
 
 ```
 
+##### TESTING: mock a 500 response
+
+Returns a 500 response if authorized, else returns 401 - can be used for testing.
+
+```
+POST [ROOT]/error
+
+HEADERS:
+    Authorization: "Bearer " + your token
+
+BODY (application/json):
+    ANY
+
+RESPONSES:
+    401: Unauthorized (bad token or token not supplied)
+    500: Internal server error (intentional)
+
+```
+
 Additionally, GET /status will respond 200 if the server is up and running.

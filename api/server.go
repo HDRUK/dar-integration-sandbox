@@ -33,4 +33,7 @@ func (r *Router) handleRoutes(db *mongo.Database, logger *zap.SugaredLogger) {
 	r.mux.HandleFunc("/first-message", baseMiddleware.AuthorizeBearerToken(baseHandler.firstMessageHandler)).Methods("POST", "OPTIONS")
 	r.mux.HandleFunc("/application", baseMiddleware.AuthorizeBearerToken(baseHandler.applicationHandler)).Methods("POST", "OPTIONS")
 
+	// Testing
+	r.mux.HandleFunc("/error", baseMiddleware.AuthorizeBearerToken(baseHandler.errorHandler)).Methods("POST", "OPTIONS")
+
 }

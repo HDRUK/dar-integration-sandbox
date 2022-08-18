@@ -47,6 +47,22 @@ func (h *BaseHandler) healthCheckHandler(w http.ResponseWriter, r *http.Request)
 	)
 }
 
+// errorHandler - always returns a 500 error for testing purposes
+func (h *BaseHandler) errorHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("500 error endpoint has been reached")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+
+	json.NewEncoder(w).Encode(
+		&DefaultResponse{
+			Success: false,
+			Status:  "INTERNAL SERVER ERROR",
+			Message: "This is a testing endpoint, it will always respond 500",
+		},
+	)
+}
+
 // applicationHandler - handler for a DAR application submission
 func (h *BaseHandler) applicationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
