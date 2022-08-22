@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -40,6 +41,8 @@ func (b *BaseMiddleware) AuthorizeBearerToken(next http.HandlerFunc) http.Handle
 				cancel()
 			}()
 			authToken := strings.Split(r.Header.Get("Authorization"), " ")[1]
+
+			fmt.Println(authToken)
 
 			isAuthorized = b.helper.isAuthorized(ctx, &authToken)
 
